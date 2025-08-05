@@ -8,7 +8,7 @@ Flashix is a lightweight flash loan protocol on Solana that allows anyone to bor
 
 
 <div align="center">
-  <img src="./imagde.png" alt="Banner" width="600"/>
+  <img src="./image.png" alt="Banner" width="600"/>
 </div>
 
 ---
