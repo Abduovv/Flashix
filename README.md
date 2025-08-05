@@ -5,6 +5,12 @@ Flashix is a lightweight flash loan protocol on Solana that allows anyone to bor
 ![Solana](https://img.shields.io/badge/Solana-Devnet-3ECF8E?logo=solana&logoColor=white)
 ![Anchor](https://img.shields.io/badge/Anchor-Framework-blueviolet)
 
+
+
+<div align="center">
+  <img src="./image.png" alt="Banner" width="600"/>
+</div>
+
 ---
 
 ```scss
