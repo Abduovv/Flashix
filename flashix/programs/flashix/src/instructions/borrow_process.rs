@@ -1,14 +1,16 @@
 use anchor_lang::prelude::*;
+use anchor_lang::{
+    solana_program::sysvar::instructions::{
+        load_instruction_at_checked, ID as INSTRUCTIONS_SYSVAR_ID,
+    },
+    Discriminator,
+};
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{Token, TokenAccount, Mint, Transfer, transfer},
-};
-use anchor_lang::{
-    Discriminator,
-    solana_program::sysvar::instructions::{ID as INSTRUCTIONS_SYSVAR_ID, load_instruction_at_checked, load_current_index_checked},
+    token::{transfer, Mint, Token, TokenAccount, Transfer},
 };
 
-use crate::{errors::*, instruction, ID, states::config::Config, emits::BorrowEvent};
+use crate::{emits::BorrowEvent, errors::*, instruction, states::config::Config, ID};
 #[derive(Accounts)]
 pub struct Borrow<'info> {
     #[account(mut)]
@@ -48,11 +50,14 @@ pub struct Borrow<'info> {
 
 impl<'info> Borrow<'info> {
     pub fn borrow_process(&mut self, borrow_amount: u64, bumps: BorrowBumps) -> Result<()> {
-      require!(borrow_amount > 0, ProtocolError::InvalidAmount);
-      require!(self.config.net_deposits >= borrow_amount, ProtocolError::NotEnoughFunds);
+        require!(borrow_amount > 0, ProtocolError::InvalidAmount);
+        require!(
+            self.config.net_deposits >= borrow_amount,
+            ProtocolError::NotEnoughFunds
+        );
 
         // Derive the Signer Seeds for the Protocol Account
-        let seeds = &[b"protocol".as_ref(), &[bumps.config]];
+        let seeds = &[b"config".as_ref(), &[bumps.config]];
         let signer_seeds = &[&seeds[..]];
 
         // Transfer the funds from the protocol to the borrower
@@ -75,10 +80,8 @@ impl<'info> Borrow<'info> {
         // Make sure that the last instruction of this transaction is a repay instruction
         let instruction_sysvar = ixs.try_borrow_data()?;
         let len = u16::from_le_bytes(instruction_sysvar[0..2].try_into().unwrap());
-           
 
         if let Ok(repay_ix) = load_instruction_at_checked(len as usize - 1, &ixs) {
-          
             // Instruction checks
             require_keys_eq!(repay_ix.program_id, ID, ProtocolError::InvalidProgram);
             require!(
@@ -88,29 +91,36 @@ impl<'info> Borrow<'info> {
 
             // We could check the Wallet and Mint separately but by checking the ATA we do this automatically
             require_keys_eq!(
-                repay_ix.accounts.get(3).ok_or(ProtocolError::InvalidBorrowerAta)?.pubkey,
+                repay_ix
+                    .accounts
+                    .get(3)
+                    .ok_or(ProtocolError::InvalidBorrowerAta)?
+                    .pubkey,
                 self.borrower_ata.key(),
                 ProtocolError::InvalidBorrowerAta
             );
             require_keys_eq!(
-                repay_ix.accounts.get(4).ok_or(ProtocolError::InvalidProtocolAta)?.pubkey,
+                repay_ix
+                    .accounts
+                    .get(4)
+                    .ok_or(ProtocolError::InvalidProtocolAta)?
+                    .pubkey,
                 self.protocol_ata.key(),
                 ProtocolError::InvalidProtocolAta
             );
-            self.config.net_deposits = self.config.net_deposits.checked_sub(borrow_amount).ok_or(ProtocolError::Underflow)?;
+            self.config.net_deposits = self
+                .config
+                .net_deposits
+                .checked_sub(borrow_amount)
+                .ok_or(ProtocolError::Underflow)?;
 
-            emit!(
-                BorrowEvent {
-                  amount:borrow_amount, 
-                  user: self.borrower.key(),
-                 }
-            )
-
-            
+            emit!(BorrowEvent {
+                amount: borrow_amount,
+                user: self.borrower.key(),
+            })
         } else {
             return Err(ProtocolError::MissingRepayIx.into());
         }
-      Ok(())
+        Ok(())
     }
 }
-

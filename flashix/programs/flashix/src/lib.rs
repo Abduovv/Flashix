@@ -6,11 +6,13 @@ mod instructions;
 mod errors;
 mod emits;
 
+
 use instructions::*;
-declare_id!("9pJ3k2bUo5tQQXhsyEM9uxJ3PobZ2DNWzgxGjPxRHXhm");
+// Align program ID with Anchor.toml [programs.localnet]
+declare_id!("FKwjo9xTr2CVns9xDfwSzBFGD3GP5y1JBVFMTv7KuiGn");
 	     	
 #[program]
-pub mod flash_loan {
+pub mod blueshift_flash_loan {
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>, basis_points: u16) -> Result<()> {
